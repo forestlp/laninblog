@@ -16,11 +16,13 @@
 title: Lanlin的小院
 email: lanlin3101@outlook.com
 description: >- # this means to ignore newlines until "baseurl:"
-    这是兰林的记录站；对每一件事静下心来，也许只要三分钟就足够了。
+    对每一件事静下心来，也许只需三分钟就足够了。
+    
     多学，多练，常思考。
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
-twitter_username: jekyllrb
+#url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://forestlp.github.io"
+weichat_username: 七星龙井
 github_username: forestlp
 #host: 106.14.173.123
 
