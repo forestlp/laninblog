@@ -1,87 +1,246 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <title>happy everyday</title>
-  <meta charset="utf-8">
-  <style>
-    *{
-      text-align:center;
-    }
-    html, body { width: 100%; height: 100%; margin: 0; padding: 0; border: 0; }
-    div { margin: 0; padding: 0; border: 0; }
-    .nav {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 27px;
-      background-color: white;
-      color: black;
-      text-align: center;
-      line-height: 25px;
-    }
-    a { color: black; text-decoration: none; border-bottom: 1px dashed black; }
-    a:hover { border-bottom: 1px solid red; }
-    .previous { float: left; margin-left: 10px; }
-    .next { float: right; margin-right: 10px; }
-    .green { color: green; }
-    .red { color: red; }
-    textarea { width: 100%; height: 100%; border: 0; padding: 0; margin: 0; padding-bottom: 20px; }
-    .block-outer { float: left; width: 22%; height: 100%; padding: 5px; border-left: 1px solid black; margin: 30px 3px 3px 3px; }
-    .block-inner { height: 68%; }
-    .one { border: 0; }
-  </style>
-</head>
-
-<audio src="mp3/choujiang.mp3" preload="meta" loop autoplay id="bgmusic"></audio>
-<body marginwidth="0" marginheight="0">
-<h1>陈桂兰专属圣诞树</h1>
-<h2>做一只快乐的海盗</h2>
-<div id="blink">
-<h3>生活的贼船，不管前方有多少暴风雨，总会开往幸福的港湾。</h3>
-平安给你，做一个快乐的海盗~</div>
-    <script language="javascript">
-        function changeColor(){
-            var color="#f00|#0f0|#00f|#880|#808|#088|yellow|green|blue|gray";
-            color=color.split("|");
-            document.getElementById("blink").style.color=color[parseInt(Math.random() * color.length)];
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>陈桂兰专属圣诞树 - 快乐的海盗</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #001525 0%, #000 100%);
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: white;
         }
-        setInterval("changeColor()",200);
+
+        /* 顶部标题栏 */
+        .header {
+            position: absolute;
+            top: 5%;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            text-shadow: 0 0 20px rgba(0, 255, 127, 0.8);
+            letter-spacing: 4px;
+            font-weight: 300;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: #00ffcc;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        /* 文案浮窗 */
+        .message-card {
+            position: absolute;
+            bottom: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 20px 40px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            z-index: 10;
+            max-width: 80%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .message-card p {
+            margin: 5px 0;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        #blink-text {
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        /* 交互提示 */
+        .hint {
+            position: absolute;
+            bottom: 2%;
+            width: 100%;
+            text-align: center;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.3);
+            z-index: 5;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>陈桂兰专属圣诞树</h1>
+        <h2>做一只快乐的海盗 ⚓</h2>
+    </div>
+
+    <div class="message-card">
+        <p id="blink-text">生活的贼船，不管前方有多少暴风雨，总会开往幸福的港湾。</p>
+        <p>平安给你，做一个快乐的海盗~</p>
+    </div>
+
+    <div class="hint">拖拽旋转视角 | 寻找属于你的幸福港湾</div>
+
+    <script>
+        let scene, camera, renderer, particles, snow;
+        let mouseX = 0, mouseY = 0;
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        init();
+        animate();
+
+        function init() {
+            // Scene & Camera
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
+            camera.position.z = 1000;
+
+            // 1. 创建 3D 圣诞树粒子系统
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const colors = [];
+            const color = new THREE.Color();
+
+            // 圣诞树参数
+            const particleCount = 15000;
+            for (let i = 0; i < particleCount; i++) {
+                const ratio = i / particleCount;
+                const angle = i * 0.2;
+                const radius = 350 * (1 - ratio);
+                
+                // 螺旋上升路径
+                const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 15;
+                const y = ratio * 700 - 350;
+                const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 15;
+
+                vertices.push(x, y, z);
+
+                // 颜色：翠绿、金黄、点缀一点红
+                const rand = Math.random();
+                if (rand > 0.95) {
+                    color.setHSL(0.1, 1, 0.6); // 金色
+                } else if (rand > 0.9) {
+                    color.setHSL(0, 1, 0.5); // 红色
+                } else {
+                    color.setHSL(0.35, 1, 0.3 + Math.random() * 0.4); // 绿色系
+                }
+                colors.push(color.r, color.g, color.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 3,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            // 2. 创建雪花
+            const snowGeometry = new THREE.BufferGeometry();
+            const snowVertices = [];
+            for (let i = 0; i < 2000; i++) {
+                snowVertices.push(
+                    Math.random() * 2000 - 1000,
+                    Math.random() * 2000 - 1000,
+                    Math.random() * 2000 - 1000
+                );
+            }
+            snowGeometry.setAttribute('position', new THREE.Float32BufferAttribute(snowVertices, 3));
+            const snowMaterial = new THREE.PointsMaterial({
+                size: 4,
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.5
+            });
+            snow = new THREE.Points(snowGeometry, snowMaterial);
+            scene.add(snow);
+
+            // 3. 树顶之星
+            const starGeometry = new THREE.SphereGeometry(15, 24, 24);
+            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            const star = new THREE.Mesh(starGeometry, starMaterial);
+            star.position.y = 365;
+            scene.add(star);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Events
+            document.addEventListener('mousemove', onDocumentMouseMove);
+            window.addEventListener('resize', onWindowResize);
+            
+            // 闪烁文字逻辑
+            const blinkElem = document.getElementById('blink-text');
+            const colorsList = ["#ff0000", "#00ff00", "#00ccff", "#ffff00", "#ff00ff", "#ffffff"];
+            setInterval(() => {
+                blinkElem.style.color = colorsList[Math.floor(Math.random() * colorsList.length)];
+            }, 500);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onDocumentMouseMove(event) {
+            mouseX = (event.clientX - windowHalfX) * 0.5;
+            mouseY = (event.clientY - windowHalfY) * 0.5;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+        }
+
+        function render() {
+            const time = Date.now() * 0.0005;
+
+            // 摄像机根据鼠标平滑移动
+            camera.position.x += (mouseX - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            // 树旋转
+            particles.rotation.y = time * 0.2;
+
+            // 雪花飘落
+            const positions = snow.geometry.attributes.position.array;
+            for (let i = 1; i < positions.length; i += 3) {
+                positions[i] -= 2; // 下落速度
+                if (positions[i] < -1000) positions[i] = 1000;
+            }
+            snow.geometry.attributes.position.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
     </script>
-<canvas id="c" height="356" width="446">
-  <script>
-    var collapsed = true;
-    function toggle() {
-      var fs = top.document.getElementsByTagName('frameset')[0];
-      var f = fs.getElementsByTagName('frame');
-      if (collapsed) {
-        fs.rows = '250px,*';
-        // enable resizing of frames in firefox/opera
-        fs.noResize = false;
-        f[0].noResize = false;
-        f[1].noResize = false;
-      } else {
-        fs.rows = '30px,*';
-        // disable resizing of frames in firefox/opera
-        fs.noResize = true;
-        f[0].noResize = true;
-        f[1].noResize = true;
-      }
-      collapsed = !collapsed;
-    }
-  </script>
-  <script>
-    var b = document.body;
-    var c = document.getElementsByTagName('canvas')[0];
-    var a = c.getContext('2d');
-    document.body.clientWidth; // fix bug in chrome.
-  </script>
-  <script>
-    // start of submission //
-    M=Math;Q=M.random;J=[];U=16;T=M.sin;E=M.sqrt;for(O=k=0;x=z=j=i=k<200;)with(M[k]=k?c.cloneNode(0):c){width=height=k?32:W=446;with(getContext('2d'))if(k>10|!k)for(font='60px Impact',V='rgba(';I=i*U,fillStyle=k?k==13?V+'205,205,215,.15)':V+(147+I)+','+(k%2?128+I:0)+','+I+',.5)':'#cca',i<7;)beginPath(fill(arc(U-i/3,24-i/2,k==13?4-(i++)/2:8-i++,0,M.PI*2,1)));else for(;x=T(i),y=Q()*2-1,D=x*x+y*y,B=E(D-x/.9-1.5*y+1),R=67*(B+1)*(L=k/9+.8)>>1,i++<W;)if(D<1)beginPath(strokeStyle=V+R+','+(R+B*L>>0)+',40,.1)'),moveTo(U+x*8,U+y*8),lineTo(U+x*U,U+y*U),stroke();for(y=H=k+E(k++)*25,R=Q()*W;P=3,j<H;)J[O++]=[x+=T(R)*P+Q()*6-3,y+=Q()*U-8,z+=T(R-11)*P+Q()*6-3,j/H*20+((j+=U)>H&Q()>.8?Q(P=9)*4:0)>>1]}setInterval(function G(m,l){A=T(D-11);if(l)return(m[2]-l[2])*A+(l[0]-m[0])*T(D);a.clearRect(0,0,W,W);J.sort(G);for(i=0;L=J[i++];a.drawImage(M[L[3]+1],207+L[0]*A+L[2]*T(D)>>0,L[1]>>1)){if(i==2e3)a.fillText('Merry Christmas!',U,345);if(!(i%7))a.drawImage(M[13],((157*(i*i)+T(D*5+i*i)*5)%W)>>0,((113*i+(D*i)/60)%(290+i/99))>>0);}D+=.02},1)
-    // end of submission //
-  </script>
-</canvas>
 </body>
 </html>
